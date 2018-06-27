@@ -1,0 +1,23 @@
+{
+  "name": "tessel-edge",
+  "version": "0.0.0",
+  "description": "Edge software for Tessel 2 including WiFi and BLE.  We believe in an open Internet of Things.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reelyactive/tessel-edge.git"
+  },
+  "keywords": [
+    "reelyActive",
+    "Tessel"
+  ],
+  "dependencies": {
+  },
+  "contributors": [
+    { "name": "Jeffrey Dungen" }
+  ],
+  "license": "MIT"
+}
