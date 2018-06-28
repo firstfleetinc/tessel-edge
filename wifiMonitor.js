@@ -3,10 +3,13 @@
  * We believe in an open Internet of Things
  */
 
+const tessel = require('tessel');
 const util = require('util');
 const events = require('events');
 const spawn = require('child_process').spawn;
 const spawnSync = require('child_process').spawnSync;
+const raddec = require('raddec');
+const config = require('./config');
 
 
 /**
@@ -46,9 +49,18 @@ function handleData(instance, data) {
   var rssiSuffixIndex = data.indexOf('dB signal');
   var macPrefixIndex = data.indexOf('SA:');
   if((rssiSuffixIndex >= 0) && (macPrefixIndex >= 0)) {
-    var rssi = data.substr(rssiSuffixIndex - 3, 3);
-    var mac = data.substr(macPrefixIndex + 3, 17);
-    instance.emit('data', rssi, mac);
+    var transmitter = {
+      type: raddec.identifiers.TYPE_EUI48,
+      id: data.substr(macPrefixIndex + 3, 17)
+    };
+    var receiver = {
+      type: raddec.identifiers.TYPE_EUI48,
+      id: config.wifiMacAddress,
+      rssi: data.substr(rssiSuffixIndex - 3, 3)
+    };
+    tessel.led[2].on();
+    instance.emit('raddec', raddec.encode(transmitter, [ receiver ]));
+    tessel.led[2].off();
   }
 }
 
