@@ -66,7 +66,7 @@ function handleData(instance, data) {
 
 
 function handleClose() {
-  console.log('tcpdump closed');
+  process.exit(1);
 }
 
 
