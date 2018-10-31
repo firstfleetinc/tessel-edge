@@ -19,21 +19,17 @@ let client = dgram.createSocket('udp4');
 // Listen on UART (Port A) and generate events from the data stream
 let uart = new uartListener('A');
 
-let barnowl = new Barnowl({ enableMixing: false });
-
 // Configure barnowl to listen for both reel and tcpdump
+let barnowl = new Barnowl({ enableMixing: true });
 barnowl.addListener(BarnowlReel, {}, BarnowlReel.EventListener,
                     { path: uart });
 barnowl.addListener(BarnowlTcpdump, {}, BarnowlTcpdump.SpawnListener, {});
 
 // Forward the raddec via UDP
 barnowl.on('raddec', function(raddec) {
-  client.send(new Buffer(raddec.encodeAsHexString(), 'hex'), config.targetPort,
-              config.targetAddress, function(err) {
-    if(err) {
-      console.log('UDP forwarding error', err);
-    }
-  });
+  let raddecHex = raddec.encodeAsHexString();
+  client.send(new Buffer(raddecHex, 'hex'), config.targetPort,
+              config.targetAddress, function(err) { });
 });
 
 // Blue LED continuously toggles to indicate program is running
