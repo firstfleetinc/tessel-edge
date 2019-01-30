@@ -1,6 +1,6 @@
 {
   "name": "tessel-edge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Edge software for Tessel 2 including WiFi and BLE.  We believe in an open Internet of Things.",
   "main": "index.js",
   "scripts": {
