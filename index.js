@@ -1,5 +1,5 @@
 /*
- * Copyright reelyActive 2018
+ * Copyright reelyActive 2018-2019
  * We believe in an open Internet of Things
  */
 
@@ -12,6 +12,11 @@ const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
 const config = require('./config');
 const uartListener = require('./uartListener');
+
+const raddecOptions = {
+    includePackets: true,
+    includeTimestamp: true
+};
 
 // Create a UDP client
 let client = dgram.createSocket('udp4');
@@ -27,7 +32,7 @@ barnowl.addListener(BarnowlTcpdump, {}, BarnowlTcpdump.SpawnListener, {});
 
 // Forward the raddec via UDP
 barnowl.on('raddec', function(raddec) {
-  let raddecHex = raddec.encodeAsHexString();
+  let raddecHex = raddec.encodeAsHexString(raddecOptions);
   client.send(new Buffer(raddecHex, 'hex'), config.targetPort,
               config.targetAddress, function(err) { });
 });
