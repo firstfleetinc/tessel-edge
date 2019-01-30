@@ -12,9 +12,12 @@ const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
 const config = require('./config');
 
+const barnowlOptions = {
+    enableMixing: true
+};
 const raddecOptions = {
     includePackets: true,
-    includeTimestamp: true
+    includeTimestamp: false
 };
 
 const REEL_BAUD_RATE = 230400;
@@ -26,7 +29,7 @@ let client = dgram.createSocket('udp4');
 let uart = new tessel.port['A'].UART({ baudrate: REEL_BAUD_RATE });
 
 // Configure barnowl to listen for both reel and tcpdump
-let barnowl = new Barnowl({ enableMixing: true });
+let barnowl = new Barnowl(barnowlOptions);
 barnowl.addListener(BarnowlReel, {}, BarnowlReel.EventListener,
                     { path: uart });
 barnowl.addListener(BarnowlTcpdump, {}, BarnowlTcpdump.SpawnListener, {});
