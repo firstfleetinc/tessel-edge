@@ -7,18 +7,18 @@
 // Begin configurable parameters
 // -----------------------------
 
-const WIFI_MAC_ADDRESS = '02:a3:51:62:27:b1';
-const TARGET_ADDRESS = 'pareto.reelyactive.com';
-const TARGET_PORT = 50000;
-const MAX_PAYLOAD_BYTES = 508;
-const MAX_DELAY_MILLISECONDS = 500;
+const TARGET_ADDRESS = '192.168.0.100';
+const TARGET_PORT = 50001;
+const ENABLE_MIXING = true;
+const INCLUDE_TIMESTAMP = true;
+const INCLUDE_PACKETS = true;
 
 // ---------------------------
 // End configurable parameters
 
 
-module.exports.wifiMacAddress = WIFI_MAC_ADDRESS;
 module.exports.targetAddress = TARGET_ADDRESS;
 module.exports.targetPort = TARGET_PORT;
-module.exports.maxPayloadBytes = MAX_PAYLOAD_BYTES;
-module.exports.maxDelayMilliseconds = MAX_DELAY_MILLISECONDS;
+module.exports.enableMixing = ENABLE_MIXING;
+module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
+module.exports.includePackets = INCLUDE_PACKETS;

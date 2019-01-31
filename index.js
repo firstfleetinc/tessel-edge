@@ -1,5 +1,5 @@
 /*
- * Copyright reelyActive 2018
+ * Copyright reelyActive 2018-2019
  * We believe in an open Internet of Things
  */
 
@@ -7,38 +7,40 @@
 
 const tessel = require('tessel');
 const dgram = require('dgram');
-const reelay = require('reelay');
+const Barnowl = require('barnowl');
+const BarnowlReel = require('barnowl-reel');
+const BarnowlTcpdump = require('barnowl-tcpdump');
 const config = require('./config');
-const uartListener = require('./uartListener');
-const wifiMonitor = require('./wifiMonitor');
+
+const barnowlOptions = {
+    enableMixing: config.enableMixing
+};
+const raddecOptions = {
+    includeTimestamp: config.includeTimestamp,
+    includePackets: config.includePackets
+};
+
+const REEL_BAUD_RATE = 230400;
 
 // Create a UDP client
-var client = dgram.createSocket('udp4');
+let client = dgram.createSocket('udp4');
 
-// Listen on UART (Port A) and generate events from the data stream
-var uart = new uartListener('A');
+// Listen on UART (Port A) for reel data events
+let uart = new tessel.port['A'].UART({ baudrate: REEL_BAUD_RATE });
 
-// Enable the relay
-var relay = new reelay();
-relay.addListener( { protocol: 'event', path: uart, enableMixing: false } );
-relay.addForwarder({
-  protocol: 'udp',
-  port: config.targetPort,
-  address: config.targetAddress,
-  maxPayloadBytes: config.maxPayloadBytes,
-  maxDelayMilliseconds: config.maxDelayMilliseconds
-});
+// Configure barnowl to listen for both reel and tcpdump
+let barnowl = new Barnowl(barnowlOptions);
+barnowl.addListener(BarnowlReel, {}, BarnowlReel.EventListener,
+                    { path: uart });
+barnowl.addListener(BarnowlTcpdump, {}, BarnowlTcpdump.SpawnListener, {});
 
-// Listen on WiFi and generate events from the data stream
-var wifi = new wifiMonitor();
-
-// Forward the raddec via UDP -> TODO: move port/address to config
-wifi.on('raddec', function(packet) {
-  client.send(packet, 50001, '127.0.0.1', function(err) {
-    if(err) {
-      console.log('UDP forwarding error', err);
-    }
-  });
+// Forward the raddec via UDP and pulse the green LED
+barnowl.on('raddec', function(raddec) {
+  tessel.led[2].on();
+  let raddecHex = raddec.encodeAsHexString(raddecOptions);
+  client.send(new Buffer(raddecHex, 'hex'), config.targetPort,
+              config.targetAddress, function(err) { });
+  tessel.led[2].off();
 });
 
 // Blue LED continuously toggles to indicate program is running
