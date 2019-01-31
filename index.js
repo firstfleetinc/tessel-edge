@@ -13,11 +13,11 @@ const BarnowlTcpdump = require('barnowl-tcpdump');
 const config = require('./config');
 
 const barnowlOptions = {
-    enableMixing: true
+    enableMixing: config.enableMixing
 };
 const raddecOptions = {
-    includePackets: true,
-    includeTimestamp: false
+    includeTimestamp: config.includeTimestamp,
+    includePackets: config.includePackets
 };
 
 const REEL_BAUD_RATE = 230400;
