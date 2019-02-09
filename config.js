@@ -7,8 +7,11 @@
 // Begin configurable parameters
 // -----------------------------
 
-const TARGET_ADDRESS = '192.168.0.100';
-const TARGET_PORT = 50001;
+const RADDEC_TARGETS = [
+    { host: "192.168.0.100", port: "50001", protocol: "udp" }
+];
+const LISTEN_TO_REEL = true;
+const LISTEN_TO_TCPDUMP = false;
 const ENABLE_MIXING = true;
 const INCLUDE_TIMESTAMP = true;
 const INCLUDE_PACKETS = true;
@@ -17,8 +20,9 @@ const INCLUDE_PACKETS = true;
 // End configurable parameters
 
 
-module.exports.targetAddress = TARGET_ADDRESS;
-module.exports.targetPort = TARGET_PORT;
+module.exports.raddecTargets = RADDEC_TARGETS;
+module.exports.listenToReel = LISTEN_TO_REEL;
+module.exports.listenToTcpdump = LISTEN_TO_TCPDUMP;
 module.exports.enableMixing = ENABLE_MIXING;
 module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
 module.exports.includePackets = INCLUDE_PACKETS;

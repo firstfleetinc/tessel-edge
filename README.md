@@ -19,11 +19,17 @@ All configuration parameters can be found in the file __config.js__.  Update onl
 
 | Parameter         | Description                                            | 
 |:------------------|:-------------------------------------------------------|
-| TARGET_ADDRESS    | Target IP address or hostname (ex: '192.168.0.100')    |
-| TARGET_PORT       | Target port (default: 50001)                           |
+| RADDEC_TARGETS    | Array of targets for raddec data (see below)           |
+| LISTEN_TO_REEL    | Enable listener on reel module (default: true)         |
+| LISTEN_TO_TCPDUMP | Enable listener on tcpdump (default: false)            |
 | ENABLE_MIXING     | Combine multiple decodings of an individual transmitter into a single raddec (default: true) |
 | INCLUDE_TIMESTAMP | Include the optional timestamp in each raddec (default: true) |
 | INCLUDE_PACKETS   | Include the optional packets in each raddec (default: true) |
+
+Each raddec target in the RADDEC_TARGETS array is an object with the following properties:
+- _host_: an IP address or hostname (ex: '192.168.0.100')
+- _port_: the target port (default: 50001)
+- _protocol_: the transport protocol (currently supports only 'udp')
 
 
 Programming
