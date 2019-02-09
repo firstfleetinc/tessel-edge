@@ -1,7 +1,7 @@
 tessel-edge
 ===========
 
-Edge software for Tessel 2 including WiFi and BLE.
+Edge software for [Tessel 2](https://tessel.io/) which forwards [raddecs](https://github.com/reelyactive/raddec/) from a reel module (BLE) and tcpdump (WiFi).
 
 
 Installation
@@ -17,9 +17,19 @@ Configuration
 
 All configuration parameters can be found in the file __config.js__.  Update only this file, as required.
 
+| Parameter         | Description                                            | 
+|:------------------|:-------------------------------------------------------|
+| TARGET_ADDRESS    | Target IP address or hostname (ex: '192.168.0.100')    |
+| TARGET_PORT       | Target port (default: 50001)                           |
+| ENABLE_MIXING     | Combine multiple decodings of an individual transmitter into a single raddec (default: true) |
+| INCLUDE_TIMESTAMP | Include the optional timestamp in each raddec (default: true) |
+| INCLUDE_PACKETS   | Include the optional packets in each raddec (default: true) |
+
 
 Programming
 -----------
+
+Programming the Tessel 2 requires the [t2-cli](https://www.npmjs.com/package/t2-cli) package which can be installed by following [these instructions](http://tessel.github.io/t2-start/).
 
 With the Tessel 2 connected to the programming station via USB, from the root of this repository run:
 
@@ -31,7 +41,7 @@ The code will be pushed to flash memory on the Tessel and will run every time it
 Prerequisites
 -------------
 
-The software expects the following:
+The __tessel-edge__ software expects the following:
 - a reel or reelceiver module connected via UART on Port A
 - maximum baud rate of Port A set to at least 230400
 - tcpdump installed
