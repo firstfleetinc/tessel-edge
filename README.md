@@ -1,7 +1,7 @@
 tessel-edge
 ===========
 
-Edge software for [Tessel 2](https://tessel.io/) which forwards [raddecs](https://github.com/reelyactive/raddec/) from a reel module (BLE) and tcpdump (WiFi).
+Edge software for the [reelyActive](https://www.reelyactive.com) __Owl-in-One__ based on the [Tessel 2](https://tessel.io/) platform.  Forwards [raddecs](https://github.com/reelyactive/raddec/) from a reel module (BLE) and/or from tcpdump (WiFi).
 
 
 Installation
