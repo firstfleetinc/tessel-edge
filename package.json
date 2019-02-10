@@ -1,7 +1,12 @@
 {
   "name": "tessel-edge",
-  "version": "0.2.0",
-  "description": "Edge software for Tessel 2 including WiFi and BLE.  We believe in an open Internet of Things.",
+  "version": "1.0.0",
+  "homepage": "https://github.com/reelyactive/tessel-edge/",
+  "author": {
+    "name": "reelyActive",
+    "email": "info@reelyactive.com"
+  },
+  "description": "Edge software for the reelyActive Owl-in-One based on the Tessel 2 platform.  We believe in an open Internet of Things.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,13 +17,14 @@
   },
   "keywords": [
     "reelyActive",
+    "Owl-in-One",
     "Tessel"
   ],
   "dependencies": {
     "barnowl": ">=1.0.0",
-    "barnowl-reel": ">=0.1.8",
-    "barnowl-tcpdump": ">=0.1.4",
-    "raddec": ">=0.2.1"
+    "barnowl-reel": ">=0.1.9",
+    "barnowl-tcpdump": ">=0.1.5",
+    "raddec": ">=0.2.2"
   },
   "contributors": [
     { "name": "Jeffrey Dungen" }
