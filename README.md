@@ -1,7 +1,7 @@
 tessel-edge
 ===========
 
-Edge software for [Tessel 2](https://tessel.io/) which forwards [raddecs](https://github.com/reelyactive/raddec/) from a reel module (BLE) and tcpdump (WiFi).
+Edge software for the [reelyActive](https://www.reelyactive.com) __Owl-in-One__ based on the [Tessel 2](https://tessel.io/) platform.  Forwards [raddecs](https://github.com/reelyactive/raddec/) from a reel module (BLE) and/or from tcpdump (WiFi).
 
 
 Installation
@@ -19,11 +19,18 @@ All configuration parameters can be found in the file __config.js__.  Update onl
 
 | Parameter         | Description                                            | 
 |:------------------|:-------------------------------------------------------|
-| TARGET_ADDRESS    | Target IP address or hostname (ex: '192.168.0.100')    |
-| TARGET_PORT       | Target port (default: 50001)                           |
+| RADDEC_TARGETS    | Array of targets for raddec data (see below)           |
+| LISTEN_TO_REEL    | Enable listener on reel module (default: true)         |
+| LISTEN_TO_TCPDUMP | Enable listener on tcpdump (default: false)            |
 | ENABLE_MIXING     | Combine multiple decodings of an individual transmitter into a single raddec (default: true) |
 | INCLUDE_TIMESTAMP | Include the optional timestamp in each raddec (default: true) |
 | INCLUDE_PACKETS   | Include the optional packets in each raddec (default: true) |
+
+Each raddec target in the RADDEC_TARGETS array is an object with the following properties:
+- _host_: an IP address or hostname (ex: '192.168.0.100')
+- _port_: the target port (default: 50001)
+- _protocol_: the transport protocol, either 'udp' or 'webhook' (HTTP POST)
+- _options_: in the case of a 'webhook' the defaults are { useHttps: false, path: '/raddecs' }, which can be overridden
 
 
 Programming
