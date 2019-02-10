@@ -29,7 +29,8 @@ All configuration parameters can be found in the file __config.js__.  Update onl
 Each raddec target in the RADDEC_TARGETS array is an object with the following properties:
 - _host_: an IP address or hostname (ex: '192.168.0.100')
 - _port_: the target port (default: 50001)
-- _protocol_: the transport protocol (currently supports only 'udp')
+- _protocol_: the transport protocol, either 'udp' or 'webhook' (HTTP POST)
+- _options_: in the case of a 'webhook' the defaults are { useHttps: false, path: '/raddecs' }, which can be overridden
 
 
 Programming
