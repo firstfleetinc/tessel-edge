@@ -9,6 +9,7 @@ const tessel = require('tessel');
 const dgram = require('dgram');
 const http = require('http');
 const https = require('https');
+const dns = require('dns');
 const Barnowl = require('barnowl');
 const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
@@ -27,6 +28,11 @@ const raddecOptions = {
 // Constants
 const REEL_BAUD_RATE = 230400;
 const DEFAULT_RADDEC_PATH = '/raddecs';
+const INVALID_DNS_UPDATE_MILLISECONDS = 2000;
+const STANDARD_DNS_UPDATE_MILLISECONDS = 60000;
+
+// Update DNS
+updateDNS();
 
 // Create a UDP client
 let client = dgram.createSocket('udp4');
@@ -71,9 +77,11 @@ setInterval(function() { tessel.led[3].toggle(); }, 500);
 function forward(raddec, target) {
   switch(target.protocol) {
     case 'udp':
-      let raddecHex = raddec.encodeAsHexString(raddecOptions);
-      client.send(new Buffer(raddecHex, 'hex'), target.port, target.host,
-                  function(err) { });
+      if(target.isValidAddress) {
+        let raddecHex = raddec.encodeAsHexString(raddecOptions);
+        client.send(new Buffer(raddecHex, 'hex'), target.port, target.address,
+                    function(err) { });
+      }
       break;
     case 'webhook':
       target.options = target.options || {};
@@ -105,4 +113,40 @@ function forward(raddec, target) {
       req.end();
       break;
   }
+}
+
+
+/**
+ * Perform a DNS lookup on all hostnames where the UDP protocol is used,
+ * and self-set a timeout to repeat the process again.
+ */
+function updateDNS() {
+  let nextUpdateMilliseconds = STANDARD_DNS_UPDATE_MILLISECONDS;
+
+  // If there are invalid UDP addresses, shorten the update period
+  raddecTargets.forEach(function(target) {
+    if((target.protocol === 'udp') && !target.isValidAddress) {
+      nextUpdateMilliseconds = INVALID_DNS_UPDATE_MILLISECONDS;
+    }
+  });
+
+  // Perform a DNS lookup on each UDP target
+  raddecTargets.forEach(function(target) {
+    if(target.protocol === 'udp') {
+      dns.lookup(target.host, {}, function(err, address, family) {
+        if(err) {
+          tessel.led[0].on();
+          tessel.led[0].off();
+          target.isValidAddress = false;
+        }
+        else {
+          target.address = address;
+          target.isValidAddress = true;
+        }
+      });
+    }
+  });
+
+  // Schedule the next DNS update
+  setTimeout(updateDNS, nextUpdateMilliseconds);
 }
