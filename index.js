@@ -30,6 +30,11 @@ const REEL_BAUD_RATE = 230400;
 const DEFAULT_RADDEC_PATH = '/raddecs';
 const INVALID_DNS_UPDATE_MILLISECONDS = 2000;
 const STANDARD_DNS_UPDATE_MILLISECONDS = 60000;
+const REEL_DECODING_OPTIONS = {
+    maxReelLength: 1,
+    minPacketLength: 8,
+    maxPacketLength: 39
+};
 
 // Update DNS
 updateDNS();
@@ -48,7 +53,7 @@ let barnowl = new Barnowl(barnowlOptions);
 if(config.listenToReel) {
   let uart = new tessel.port['A'].UART({ baudrate: REEL_BAUD_RATE });
   barnowl.addListener(BarnowlReel, {}, BarnowlReel.EventListener,
-                      { path: uart });
+                      { path: uart, decodingOptions: REEL_DECODING_OPTIONS });
 }
 
 // Have barnowl listen for tcpdump data, if selected in configuration
