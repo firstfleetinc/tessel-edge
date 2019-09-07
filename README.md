@@ -3,6 +3,10 @@ tessel-edge
 
 Edge software for the [reelyActive](https://www.reelyactive.com) __Owl-in-One__ based on the [Tessel 2](https://tessel.io/) platform.  Forwards [raddecs](https://github.com/reelyactive/raddec/) from a reel module (BLE) and/or from tcpdump (WiFi).
 
+Consult the following tutorials for a step-by-step configuration guide:
+- [Configure an Owl-in-One](https://reelyactive.github.io/diy/oio-config/)
+- [Create a WLAN of Owl-in-Ones and a laptop](https://reelyactive.github.io/diy/oio-wlan/)
+
 
 Installation
 ------------
@@ -17,20 +21,23 @@ Configuration
 
 All configuration parameters can be found in the file __config.js__.  Update only this file, as required.
 
-| Parameter         | Description                                            | 
-|:------------------|:-------------------------------------------------------|
-| RADDEC_TARGETS    | Array of targets for raddec data (see below)           |
-| LISTEN_TO_REEL    | Enable listener on reel module (default: true)         |
-| LISTEN_TO_TCPDUMP | Enable listener on tcpdump (default: false)            |
+| Parameter         | Description                                             | 
+|:------------------|:--------------------------------------------------------|
+| RADDEC_TARGETS    | Array of targets for raddec data (see below)            |
+| IS_UDP_BROADCAST  | Set to true if target is UDP broadcast (default: false) |
+| LISTEN_TO_REEL    | Enable listener on reel module (default: true)          |
+| LISTEN_TO_TCPDUMP | Enable listener on tcpdump (default: false)             |
 | ENABLE_MIXING     | Combine multiple decodings of an individual transmitter into a single raddec (default: true) |
 | INCLUDE_TIMESTAMP | Include the optional timestamp in each raddec (default: true) |
 | INCLUDE_PACKETS   | Include the optional packets in each raddec (default: true) |
 
 Each raddec target in the RADDEC_TARGETS array is an object with the following properties:
-- _host_: an IP address or hostname (ex: '192.168.0.100')
+- _host_: an IP address or hostname (ex: '192.168.1.10')
 - _port_: the target port (default: 50001)
 - _protocol_: the transport protocol, either 'udp' or 'webhook' (HTTP POST)
 - _options_: in the case of a 'webhook' the defaults are { useHttps: false, path: '/raddecs' }, which can be overridden
+
+To broadcast UDP to all devices on the subnet, set the _host_ to the corresponding broadcast address (ex: 192.168.1.255) and set IS_UDP_BROADCAST to true.
 
 
 Programming

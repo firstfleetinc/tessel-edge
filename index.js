@@ -41,6 +41,9 @@ updateDNS();
 
 // Create a UDP client
 let client = dgram.createSocket('udp4');
+client.on('listening', function() {
+  client.setBroadcast(config.isUdpBroadcast);
+});
 
 // Create HTTP and HTTPS agents for webhooks
 let httpAgent = new http.Agent({ keepAlive: true });
