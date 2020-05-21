@@ -1,5 +1,5 @@
 /*
- * Copyright reelyActive 2018-2019
+ * Copyright reelyActive 2018-2020
  * We believe in an open Internet of Things
  */
 
@@ -13,16 +13,29 @@ const dns = require('dns');
 const Barnowl = require('barnowl');
 const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
+const DirActDigester = require('diract-digester');
+const Raddec = require('raddec');
+const { Client } = require('@elastic/elasticsearch');
 const config = require('./config');
 
 // Load the configuration parameters
 const raddecTargets = config.raddecTargets;
 const barnowlOptions = {
-    enableMixing: config.enableMixing
+    enableMixing: config.enableMixing,
+    mixingDelayMilliseconds: config.mixingDelayMilliseconds
 };
 const raddecOptions = {
     includeTimestamp: config.includeTimestamp,
     includePackets: config.includePackets
+};
+const useElasticsearch = (config.esNode !== null);
+const useDigester = config.esWriteDirActProximity || config.esWriteDirActDigest;
+let digesterOptions = {};
+if(config.esWriteDirActProximity) {
+  digesterOptions.handleDirActProximity = handleDirActProximity;
+};
+if(config.esWriteDirActDigest) {
+  digesterOptions.handleDirActDigest = handleDirActDigest;
 };
 
 // Constants
@@ -35,6 +48,10 @@ const REEL_DECODING_OPTIONS = {
     minPacketLength: 8,
     maxPacketLength: 39
 };
+const ES_RADDEC_INDEX = 'raddec';
+const ES_DIRACT_PROXIMITY_INDEX = 'diract-proximity';
+const ES_DIRACT_DIGEST_INDEX = 'diract-digest';
+const ES_MAPPING_TYPE = '_doc';
 
 // Update DNS
 updateDNS();
@@ -48,6 +65,15 @@ client.on('listening', function() {
 // Create HTTP and HTTPS agents for webhooks
 let httpAgent = new http.Agent({ keepAlive: true });
 let httpsAgent = new https.Agent({ keepAlive: true });
+
+// Create Elasticsearch client
+let esClient;
+if(useElasticsearch) {
+  esClient = new Client({ node: config.esNode });
+}
+
+// Create diract digester
+let digester = new DirActDigester(digesterOptions);
 
 // Create barnowl instance with the configuration options
 let barnowl = new Barnowl(barnowlOptions);
@@ -70,6 +96,22 @@ barnowl.on('raddec', function(raddec) {
   raddecTargets.forEach(function(target) {
     forward(raddec, target);
   });
+  if(useDigester) {
+    digester.handleRaddec(raddec);
+  }
+  if(useElasticsearch && config.esWriteRaddec) {
+    let id = raddec.timestamp + '-' + raddec.transmitterId + '-' +
+             raddec.transmitterIdType;
+    let esRaddec = raddec.toFlattened(raddecOptions);
+    esRaddec.timestamp = new Date(esRaddec.timestamp).toISOString();
+    let params = {
+        index: ES_RADDEC_INDEX,
+        type: ES_MAPPING_TYPE,
+        id: id,
+        body: esRaddec
+    };
+    esCreate(params);
+  }
   tessel.led[2].off();
 });
 
@@ -120,6 +162,62 @@ function forward(raddec, target) {
       req.write(raddecString);
       req.end();
       break;
+  }
+}
+
+
+/**
+ * Create an entry in Elasticsearch.
+ * @param {Object} params The parameters.
+ */
+function esCreate(params) {
+  esClient.create(params, {}, function(err, result) {
+    if(err) {
+      tessel.led[0].on();
+      tessel.led[0].off();
+    }
+  });
+}
+
+
+/**
+ * Handle a DirAct proximity packet by writing to Elasticsearch.
+ * @param {Object} proximity The DirAct proximity data.
+ */
+function handleDirActProximity(proximity) {
+  // TODO: webhook
+
+  if(useElasticsearch && config.esWriteDirActProximity) {
+    let id = proximity.timestamp + '-' + proximity.instanceId;
+    proximity.timestamp = new Date(proximity.timestamp).toISOString();
+    let params = {
+        index: ES_DIRACT_PROXIMITY_INDEX,
+        type: ES_MAPPING_TYPE,
+        id: id,
+        body: proximity
+    };
+    esCreate(params);
+  }
+}
+
+
+/**
+ * Handle a DirAct digest packet by writing to Elasticsearch.
+ * @param {Object} digest The DirAct digest data.
+ */
+function handleDirActDigest(digest) {
+  // TODO: webhook
+
+  if(useElasticsearch && config.esWriteDirActDigest) {
+    let id = digest.timestamp + '-' + digest.instanceId;
+    digest.timestamp = new Date(digest.timestamp).toISOString();
+    let params = {
+        index: ES_DIRACT_DIGEST_INDEX,
+        type: ES_MAPPING_TYPE,
+        id: id,
+        body: digest
+    };
+    esCreate(params);
   }
 }
 

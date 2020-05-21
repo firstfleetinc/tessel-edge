@@ -1,6 +1,6 @@
 {
   "name": "tessel-edge",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "homepage": "https://github.com/reelyactive/tessel-edge/",
   "author": {
     "name": "reelyActive",
@@ -21,13 +21,17 @@
     "Tessel"
   ],
   "dependencies": {
-    "barnowl": ">=1.0.0",
+    "@elastic/elasticsearch": "^7.0.0",
+    "barnowl": "^1.1.0",
     "barnowl-reel": ">=0.1.10",
     "barnowl-tcpdump": ">=0.1.5",
-    "raddec": ">=0.2.3"
+    "diract-digester": ">=0.1.0",
+    "raddec": ">=0.2.5"
   },
   "contributors": [
-    { "name": "Jeffrey Dungen" }
+    {
+      "name": "Jeffrey Dungen"
+    }
   ],
   "license": "MIT"
 }
