@@ -40,6 +40,7 @@ if(config.diractProximityTargets.length > 0) {
 if(config.diractDigestTargets.length > 0) {
   digesterOptions.handleDirActDigest = handleDirActDigest;
 };
+const isDebugMode = config.isDebugMode;
 
 // Constants
 const REEL_BAUD_RATE = 230400;
@@ -172,10 +173,7 @@ function post(data, target) {
     options.agent = httpAgent;
     req = http.request(options, function(res) { });
   }
-  req.on('error', function(err) {
-    tessel.led[0].on();
-    tessel.led[0].off();
-  });
+  req.on('error', handleError);
   req.write(dataString);
   req.end();
 }
@@ -189,8 +187,7 @@ function esCreate(params) {
   if(useElasticsearch) {
     esClient.create(params, {}, function(err, result) {
       if(err) {
-        tessel.led[0].on();
-        tessel.led[0].off();
+        handleError(err);
       }
     });
   }
@@ -272,8 +269,7 @@ function updateDNS() {
     if(target.protocol === 'udp') {
       dns.lookup(target.host, {}, function(err, address, family) {
         if(err) {
-          tessel.led[0].on();
-          tessel.led[0].off();
+          handleError(err);
           target.isValidAddress = false;
         }
         else {
@@ -286,4 +282,18 @@ function updateDNS() {
 
   // Schedule the next DNS update
   setTimeout(updateDNS, nextUpdateMilliseconds);
+}
+
+
+/**
+ * Handle the given error by blinking the red LED and, if debug mode is enabled,
+ * print the error to the console.
+ * @param {Object} err The error to handle.
+ */
+function handleError(err) {
+  tessel.led[0].on();
+  if(isDebugMode) {
+    console.log(err);
+  }
+  tessel.led[0].off();
 }

@@ -22,6 +22,7 @@ const ENABLE_MIXING = true;
 const MIXING_DELAY_MILLISECONDS = 1000;
 const INCLUDE_TIMESTAMP = true;
 const INCLUDE_PACKETS = false;
+const IS_DEBUG_MODE = false;
 
 // ---------------------------
 // End configurable parameters
@@ -38,3 +39,4 @@ module.exports.enableMixing = ENABLE_MIXING;
 module.exports.mixingDelayMilliseconds = MIXING_DELAY_MILLISECONDS;
 module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
 module.exports.includePackets = INCLUDE_PACKETS;
+module.exports.isDebugMode = IS_DEBUG_MODE;
