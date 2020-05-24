@@ -135,34 +135,46 @@ function forward(raddec, target) {
       break;
     case 'webhook':
       target.options = target.options || {};
-      let raddecString = JSON.stringify(raddec);
-      let options = {
-          hostname: target.host,
-          port: target.port,
-          path: target.options.path || DEFAULT_RADDEC_PATH,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': raddecString.length
-          }
-      };
-      let req;
-      if(target.options.useHttps) {
-        options.agent = httpsAgent;
-        req = https.request(options, function(res) { });
-      }
-      else {
-        options.agent = httpAgent;
-        req = http.request(options, function(res) { });
-      }
-      req.on('error', function(err) {
-        tessel.led[0].on();
-        tessel.led[0].off();
-      });
-      req.write(raddecString);
-      req.end();
+      target.options.path = target.options.path || DEFAULT_RADDEC_PATH;
+      post(raddec, target);
       break;
   }
+}
+
+
+/**
+ * HTTP POST the given JSON data to the given target.
+ * @param {Object} data The data to POST.
+ * @param {Object} target The target host, port and protocol.
+ */
+function post(data, target) {
+  target.options = target.options || {};
+  let dataString = JSON.stringify(data);
+  let options = {
+      hostname: target.host,
+      port: target.port,
+      path: target.options.path || '/',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': dataString.length
+      }
+  };
+  let req;
+  if(target.options.useHttps) {
+    options.agent = httpsAgent;
+    req = https.request(options, function(res) { });
+  }
+  else {
+    options.agent = httpAgent;
+    req = http.request(options, function(res) { });
+  }
+  req.on('error', function(err) {
+    tessel.led[0].on();
+    tessel.led[0].off();
+  });
+  req.write(dataString);
+  req.end();
 }
 
 
