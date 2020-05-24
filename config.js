@@ -22,9 +22,6 @@ const ENABLE_MIXING = true;
 const MIXING_DELAY_MILLISECONDS = 1000;
 const INCLUDE_TIMESTAMP = true;
 const INCLUDE_PACKETS = false;
-const ES_WRITE_RADDEC = true;
-const ES_WRITE_DIRACT_PROXIMITY = true;
-const ES_WRITE_DIRACT_DIGEST = true;
 
 // ---------------------------
 // End configurable parameters
@@ -41,6 +38,3 @@ module.exports.enableMixing = ENABLE_MIXING;
 module.exports.mixingDelayMilliseconds = MIXING_DELAY_MILLISECONDS;
 module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
 module.exports.includePackets = INCLUDE_PACKETS;
-module.exports.esWriteRaddec = ES_WRITE_RADDEC;
-module.exports.esWriteDirActProximity = ES_WRITE_DIRACT_PROXIMITY;
-module.exports.esWriteDirActDigest = ES_WRITE_DIRACT_DIGEST;

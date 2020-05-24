@@ -31,12 +31,13 @@ const raddecOptions = {
     includePackets: config.includePackets
 };
 const useElasticsearch = (config.esNode !== null);
-const useDigester = config.esWriteDirActProximity || config.esWriteDirActDigest;
+const useDigester = (config.diractProximityTargets.length > 0) ||
+                    (config.diractDigestTargets.length > 0);
 let digesterOptions = {};
-if(config.esWriteDirActProximity) {
+if(config.diractProximityTargets.length > 0) {
   digesterOptions.handleDirActProximity = handleDirActProximity;
 };
-if(config.esWriteDirActDigest) {
+if(config.diractDigestTargets.length > 0) {
   digesterOptions.handleDirActDigest = handleDirActDigest;
 };
 
@@ -101,19 +102,6 @@ barnowl.on('raddec', function(raddec) {
   if(useDigester) {
     digester.handleRaddec(raddec);
   }
-  if(useElasticsearch && config.esWriteRaddec) {
-    let id = raddec.timestamp + '-' + raddec.transmitterId + '-' +
-             raddec.transmitterIdType;
-    let esRaddec = raddec.toFlattened(raddecOptions);
-    esRaddec.timestamp = new Date(esRaddec.timestamp).toISOString();
-    let params = {
-        index: ES_RADDEC_INDEX,
-        type: ES_MAPPING_TYPE,
-        id: id,
-        body: esRaddec
-    };
-    esCreate(params);
-  }
   tessel.led[2].off();
 });
 
@@ -139,6 +127,19 @@ function forward(raddec, target) {
       target.options = target.options || {};
       target.options.path = target.options.path || DEFAULT_RADDEC_PATH;
       post(raddec, target);
+      break;
+    case 'elasticsearch':
+      let id = raddec.timestamp + '-' + raddec.transmitterId + '-' +
+               raddec.transmitterIdType;
+      let esRaddec = raddec.toFlattened(raddecOptions);
+      esRaddec.timestamp = new Date(esRaddec.timestamp).toISOString();
+      let params = {
+          index: ES_RADDEC_INDEX,
+          type: ES_MAPPING_TYPE,
+          id: id,
+          body: esRaddec
+      };
+      esCreate(params);
       break;
   }
 }
@@ -204,20 +205,19 @@ function handleDirActProximity(proximity) {
       case 'webhook':
         post(proximity, target);
         break;
+      case 'elasticsearch':
+        let id = proximity.timestamp + '-' + proximity.instanceId;
+        proximity.timestamp = new Date(proximity.timestamp).toISOString();
+        let params = {
+            index: ES_DIRACT_PROXIMITY_INDEX,
+            type: ES_MAPPING_TYPE,
+            id: id,
+            body: proximity
+        };
+        esCreate(params);
+        break;
     }
   });
-
-  if(useElasticsearch && config.esWriteDirActProximity) {
-    let id = proximity.timestamp + '-' + proximity.instanceId;
-    proximity.timestamp = new Date(proximity.timestamp).toISOString();
-    let params = {
-        index: ES_DIRACT_PROXIMITY_INDEX,
-        type: ES_MAPPING_TYPE,
-        id: id,
-        body: proximity
-    };
-    esCreate(params);
-  }
 }
 
 
@@ -231,20 +231,19 @@ function handleDirActDigest(digest) {
       case 'webhook':
         post(digest, target);
         break;
+      case 'elasticsearch':
+        let id = digest.timestamp + '-' + digest.instanceId;
+        digest.timestamp = new Date(digest.timestamp).toISOString();
+        let params = {
+            index: ES_DIRACT_DIGEST_INDEX,
+            type: ES_MAPPING_TYPE,
+            id: id,
+            body: digest
+        };
+        esCreate(params);
+        break;
     }
   });
-
-  if(useElasticsearch && config.esWriteDirActDigest) {
-    let id = digest.timestamp + '-' + digest.instanceId;
-    digest.timestamp = new Date(digest.timestamp).toISOString();
-    let params = {
-        index: ES_DIRACT_DIGEST_INDEX,
-        type: ES_MAPPING_TYPE,
-        id: id,
-        body: digest
-    };
-    esCreate(params);
-  }
 }
 
 
