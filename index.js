@@ -10,6 +10,7 @@ const dgram = require('dgram');
 const http = require('http');
 const https = require('https');
 const dns = require('dns');
+const querystring = require('querystring');
 const Barnowl = require('barnowl');
 const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
@@ -45,6 +46,9 @@ const isDebugMode = config.isDebugMode;
 // Constants
 const REEL_BAUD_RATE = 230400;
 const DEFAULT_RADDEC_PATH = '/raddecs';
+const DEFAULT_UA_PATH = '/collect';
+const DEFAULT_UA_HOST = 'www.google-analytics.com';
+const DEFAULT_UA_PAGE = '/owl-in-one';
 const INVALID_DNS_UPDATE_MILLISECONDS = 2000;
 const STANDARD_DNS_UPDATE_MILLISECONDS = 60000;
 const REEL_DECODING_OPTIONS = {
@@ -142,6 +146,23 @@ function forward(raddec, target) {
       };
       esCreate(params);
       break;
+    case 'ua':
+      target.host = target.host || DEFAULT_UA_HOST;
+      target.port = target.port || 443;
+      target.options = target.options || {};
+      target.options.path = target.options.path || DEFAULT_UA_PATH;
+      if(!(target.options.useHttps === false)) {
+        target.options.useHttps = true;
+      }
+      let data = {
+          v: '1',
+          tid: target.tid,
+          cid: raddec.transmitterId + '/' + raddec.transmitterIdType,
+          t: 'pageview',
+          dp: target.page || DEFAULT_UA_PAGE
+      };
+      post(data, target, true);
+      break;
   }
 }
 
@@ -150,19 +171,31 @@ function forward(raddec, target) {
  * HTTP POST the given JSON data to the given target.
  * @param {Object} data The data to POST.
  * @param {Object} target The target host, port and protocol.
+ * @param {boolean} toQueryString Convert the data to query string?
  */
-function post(data, target) {
+function post(data, target, toQueryString) {
   target.options = target.options || {};
-  let dataString = JSON.stringify(data);
+  let dataString;
+  let headers;
+
+  if(toQueryString) {
+    dataString = querystring.encode(data);
+    headers = { "Content-Length": dataString.length };
+  }
+  else {
+    dataString = JSON.stringify(data);
+    headers = {
+        "Content-Type": "application/json",
+        "Content-Length": dataString.length
+    };
+  }
+
   let options = {
       hostname: target.host,
       port: target.port,
       path: target.options.path || '/',
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': dataString.length
-      }
+      headers: headers
   };
   let req;
   if(target.options.useHttps) {
