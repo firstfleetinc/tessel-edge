@@ -186,12 +186,14 @@ function post(data, target) {
  * @param {Object} params The parameters.
  */
 function esCreate(params) {
-  esClient.create(params, {}, function(err, result) {
-    if(err) {
-      tessel.led[0].on();
-      tessel.led[0].off();
-    }
-  });
+  if(useElasticsearch) {
+    esClient.create(params, {}, function(err, result) {
+      if(err) {
+        tessel.led[0].on();
+        tessel.led[0].off();
+      }
+    });
+  }
 }
 
 
@@ -207,12 +209,14 @@ function handleDirActProximity(proximity) {
         break;
       case 'elasticsearch':
         let id = proximity.timestamp + '-' + proximity.instanceId;
-        proximity.timestamp = new Date(proximity.timestamp).toISOString();
+        let timestamp = new Date(proximity.timestamp).toISOString();
+        let esProximity = { timestamp: timestamp };
+        Object.assign(esProximity, proximity);
         let params = {
             index: ES_DIRACT_PROXIMITY_INDEX,
             type: ES_MAPPING_TYPE,
             id: id,
-            body: proximity
+            body: esProximity
         };
         esCreate(params);
         break;
@@ -233,12 +237,14 @@ function handleDirActDigest(digest) {
         break;
       case 'elasticsearch':
         let id = digest.timestamp + '-' + digest.instanceId;
-        digest.timestamp = new Date(digest.timestamp).toISOString();
+        let timestamp = new Date(digest.timestamp).toISOString();
+        let esDigest = { timestamp: timestamp };
+        Object.assign(esDigest, digest);
         let params = {
             index: ES_DIRACT_DIGEST_INDEX,
             type: ES_MAPPING_TYPE,
             id: id,
-            body: digest
+            body: esDigest
         };
         esCreate(params);
         break;
