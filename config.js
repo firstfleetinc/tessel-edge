@@ -8,7 +8,7 @@
 // -----------------------------
 
 const RADDEC_TARGETS = [
-    { host: "192.168.1.255", port: "50001", protocol: "udp" }
+    { protocol: "udp", host: "192.168.1.255", port: "50001" }
 ];
 const DIRACT_PROXIMITY_TARGETS = [
 ];
