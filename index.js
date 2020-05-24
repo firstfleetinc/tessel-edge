@@ -20,6 +20,8 @@ const config = require('./config');
 
 // Load the configuration parameters
 const raddecTargets = config.raddecTargets;
+const diractProximityTargets = config.diractProximityTargets;
+const diractDigestTargets = config.diractDigestTargets;
 const barnowlOptions = {
     enableMixing: config.enableMixing,
     mixingDelayMilliseconds: config.mixingDelayMilliseconds
@@ -193,11 +195,17 @@ function esCreate(params) {
 
 
 /**
- * Handle a DirAct proximity packet by writing to Elasticsearch.
+ * Handle a DirAct proximity packet by forwarding to all targets.
  * @param {Object} proximity The DirAct proximity data.
  */
 function handleDirActProximity(proximity) {
-  // TODO: webhook
+  diractProximityTargets.forEach(function(target) {
+    switch(target.protocol) {
+      case 'webhook':
+        post(proximity, target);
+        break;
+    }
+  });
 
   if(useElasticsearch && config.esWriteDirActProximity) {
     let id = proximity.timestamp + '-' + proximity.instanceId;
@@ -214,11 +222,17 @@ function handleDirActProximity(proximity) {
 
 
 /**
- * Handle a DirAct digest packet by writing to Elasticsearch.
+ * Handle a DirAct digest packet by forwarding to all targets.
  * @param {Object} digest The DirAct digest data.
  */
 function handleDirActDigest(digest) {
-  // TODO: webhook
+  diractDigestTargets.forEach(function(target) {
+    switch(target.protocol) {
+      case 'webhook':
+        post(digest, target);
+        break;
+    }
+  });
 
   if(useElasticsearch && config.esWriteDirActDigest) {
     let id = digest.timestamp + '-' + digest.instanceId;

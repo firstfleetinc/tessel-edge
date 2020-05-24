@@ -10,6 +10,10 @@
 const RADDEC_TARGETS = [
     { host: "192.168.1.255", port: "50001", protocol: "udp" }
 ];
+const DIRACT_PROXIMITY_TARGETS = [
+];
+const DIRACT_DIGEST_TARGETS = [
+];
 const ES_NODE = null;            // Example: 'http://192.168.1.10:9200'
 const IS_UDP_BROADCAST = true;
 const LISTEN_TO_REEL = true;
@@ -27,6 +31,8 @@ const ES_WRITE_DIRACT_DIGEST = true;
 
 
 module.exports.raddecTargets = RADDEC_TARGETS;
+module.exports.diractProximityTargets = DIRACT_PROXIMITY_TARGETS;
+module.exports.diractDigestTargets = DIRACT_DIGEST_TARGETS;
 module.exports.esNode = ES_NODE;
 module.exports.isUdpBroadcast = IS_UDP_BROADCAST;
 module.exports.listenToReel = LISTEN_TO_REEL;
