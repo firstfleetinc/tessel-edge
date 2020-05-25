@@ -26,7 +26,8 @@
     "barnowl-reel": ">=0.1.10",
     "barnowl-tcpdump": ">=0.1.5",
     "diract-digester": ">=0.1.0",
-    "raddec": ">=0.2.5"
+    "raddec": ">=0.2.5",
+    "raddec-filter": ">=0.3.0"
   },
   "contributors": [
     {

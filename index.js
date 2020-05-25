@@ -16,6 +16,7 @@ const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
 const DirActDigester = require('diract-digester');
 const Raddec = require('raddec');
+const RaddecFilter = require('raddec-filter');
 const { Client } = require('@elastic/elasticsearch');
 const config = require('./config');
 
@@ -31,6 +32,7 @@ const raddecOptions = {
     includeTimestamp: config.includeTimestamp,
     includePackets: config.includePackets
 };
+const raddecFilterParameters = config.raddecFilterParameters;
 const useElasticsearch = (config.esNode !== null);
 const useDigester = (config.diractProximityTargets.length > 0) ||
                     (config.diractDigestTargets.length > 0);
@@ -80,6 +82,9 @@ if(useElasticsearch) {
   esClient = new Client({ node: config.esNode });
 }
 
+// Create raddec filter
+let filter = new RaddecFilter(raddecFilterParameters);
+
 // Create diract digester
 let digester = new DirActDigester(digesterOptions);
 
@@ -101,11 +106,13 @@ if(config.listenToTcpdump) {
 // Forward the raddec to each target while pulsing the green LED
 barnowl.on('raddec', function(raddec) {
   tessel.led[2].on();
-  raddecTargets.forEach(function(target) {
-    forward(raddec, target);
-  });
-  if(useDigester) {
-    digester.handleRaddec(raddec);
+  if(filter.isPassing(raddec)) {
+    raddecTargets.forEach(function(target) {
+      forward(raddec, target);
+    });
+    if(useDigester) {
+      digester.handleRaddec(raddec);
+    }
   }
   tessel.led[2].off();
 });

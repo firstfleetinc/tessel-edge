@@ -4,6 +4,9 @@
  */
 
 
+const Raddec = require('raddec');
+
+
 // Begin configurable parameters
 // -----------------------------
 
@@ -20,6 +23,9 @@ const LISTEN_TO_REEL = true;
 const LISTEN_TO_TCPDUMP = false;
 const ENABLE_MIXING = true;
 const MIXING_DELAY_MILLISECONDS = 1000;
+const RADDEC_FILTER_PARAMETERS = {
+    minRSSI: -90
+};
 const INCLUDE_TIMESTAMP = true;
 const INCLUDE_PACKETS = false;
 const IS_DEBUG_MODE = false;
@@ -37,6 +43,7 @@ module.exports.listenToReel = LISTEN_TO_REEL;
 module.exports.listenToTcpdump = LISTEN_TO_TCPDUMP;
 module.exports.enableMixing = ENABLE_MIXING;
 module.exports.mixingDelayMilliseconds = MIXING_DELAY_MILLISECONDS;
+module.exports.raddecFilterParameters = RADDEC_FILTER_PARAMETERS;
 module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
 module.exports.includePackets = INCLUDE_PACKETS;
 module.exports.isDebugMode = IS_DEBUG_MODE;
