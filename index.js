@@ -246,9 +246,8 @@ function handleDirActProximity(proximity) {
         break;
       case 'elasticsearch':
         let id = proximity.timestamp + '-' + proximity.instanceId;
-        let timestamp = new Date(proximity.timestamp).toISOString();
-        let esProximity = { timestamp: timestamp };
-        Object.assign(esProximity, proximity);
+        let esProximity = Object.assign({}, proximity);
+        esProximity.timestamp = new Date(proximity.timestamp).toISOString();
         let params = {
             index: ES_DIRACT_PROXIMITY_INDEX,
             type: ES_MAPPING_TYPE,
@@ -274,9 +273,8 @@ function handleDirActDigest(digest) {
         break;
       case 'elasticsearch':
         let id = digest.timestamp + '-' + digest.instanceId;
-        let timestamp = new Date(digest.timestamp).toISOString();
-        let esDigest = { timestamp: timestamp };
-        Object.assign(esDigest, digest);
+        let esDigest = Object.assign({}, digest);
+        esDigest.timestamp = new Date(digest.timestamp).toISOString();
         let params = {
             index: ES_DIRACT_DIGEST_INDEX,
             type: ES_MAPPING_TYPE,
