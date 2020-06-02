@@ -58,6 +58,7 @@ const REEL_DECODING_OPTIONS = {
     minPacketLength: 8,
     maxPacketLength: 39
 };
+const ES_MAX_QUEUED_DOCS = 12;
 const ES_RADDEC_INDEX = 'raddec';
 const ES_DIRACT_PROXIMITY_INDEX = 'diract-proximity';
 const ES_DIRACT_DIGEST_INDEX = 'diract-digest';
@@ -78,8 +79,11 @@ let httpsAgent = new https.Agent({ keepAlive: true });
 
 // Create Elasticsearch client
 let esClient;
+let esDocs;
+let isEsCallPending = false;
 if(useElasticsearch) {
   esClient = new Client({ node: config.esNode });
+  esDocs = new Map();
 }
 
 // Create raddec filter
@@ -145,13 +149,7 @@ function forward(raddec, target) {
                raddec.transmitterIdType;
       let esRaddec = raddec.toFlattened(raddecOptions);
       esRaddec.timestamp = new Date(esRaddec.timestamp).toISOString();
-      let params = {
-          index: ES_RADDEC_INDEX,
-          type: ES_MAPPING_TYPE,
-          id: id,
-          body: esRaddec
-      };
-      esCreate(params);
+      esHandleDoc(id, ES_RADDEC_INDEX, esRaddec);
       break;
     case 'ua':
       target.host = target.host || DEFAULT_UA_HOST;
@@ -220,17 +218,48 @@ function post(data, target, toQueryString) {
 
 
 /**
- * Create an entry in Elasticsearch.
+ * Handle an Elasticsearch doc, initiating bulk update if no API call pending.
  * @param {Object} params The parameters.
  */
-function esCreate(params) {
-  if(useElasticsearch) {
-    esClient.create(params, {}, function(err, result) {
-      if(err) {
-        handleError(err);
-      }
-    });
+function esHandleDoc(id, index, doc) {
+  while(esDocs.size >= ES_MAX_QUEUED_DOCS) {
+    let oldestKey = esDocs.keys().next().value;
+    esDocs.delete(oldestKey);
   }
+
+  esDocs.set({ id: id, index: index }, doc);
+
+  if(!isEsCallPending) {
+    esBulk();
+  }
+}
+
+
+/**
+ * Perform Elasticsearch bulk update iteratively until there are no more docs.
+ */
+function esBulk() {
+  let body = [];
+  isEsCallPending = true;
+
+  esDocs.forEach(function(doc, key) {
+    body.push({ "create": { "_index": key.index, "_id": key.id } });
+    body.push(doc);
+  });
+  esDocs.clear();
+
+  esClient.bulk({ body: body }, function(err, result) {
+    let isMoreEsDocs = (esDocs.size > 0);
+    if(err) {
+      handleError(err);
+    }
+    if(isMoreEsDocs) {
+      esBulk();
+    }
+    else {
+      isEsCallPending = false;
+    }
+  });
 }
 
 
@@ -248,13 +277,7 @@ function handleDirActProximity(proximity) {
         let id = proximity.timestamp + '-' + proximity.instanceId;
         let esProximity = Object.assign({}, proximity);
         esProximity.timestamp = new Date(proximity.timestamp).toISOString();
-        let params = {
-            index: ES_DIRACT_PROXIMITY_INDEX,
-            type: ES_MAPPING_TYPE,
-            id: id,
-            body: esProximity
-        };
-        esCreate(params);
+        esHandleDoc(id, ES_DIRACT_PROXIMITY_INDEX, esProximity);
         break;
     }
   });
@@ -275,13 +298,7 @@ function handleDirActDigest(digest) {
         let id = digest.timestamp + '-' + digest.instanceId;
         let esDigest = Object.assign({}, digest);
         esDigest.timestamp = new Date(digest.timestamp).toISOString();
-        let params = {
-            index: ES_DIRACT_DIGEST_INDEX,
-            type: ES_MAPPING_TYPE,
-            id: id,
-            body: esDigest
-        };
-        esCreate(params);
+        esHandleDoc(id, ES_DIRACT_DIGEST_INDEX, esDigest);
         break;
     }
   });
