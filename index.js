@@ -1,5 +1,5 @@
 /*
- * Copyright reelyActive 2018-2019
+ * Copyright reelyActive 2018-2020
  * We believe in an open Internet of Things
  */
 
@@ -10,24 +10,47 @@ const dgram = require('dgram');
 const http = require('http');
 const https = require('https');
 const dns = require('dns');
+const querystring = require('querystring');
 const Barnowl = require('barnowl');
 const BarnowlReel = require('barnowl-reel');
 const BarnowlTcpdump = require('barnowl-tcpdump');
+const DirActDigester = require('diract-digester');
+const Raddec = require('raddec');
+const RaddecFilter = require('raddec-filter');
+const { Client } = require('@elastic/elasticsearch');
 const config = require('./config');
 
 // Load the configuration parameters
 const raddecTargets = config.raddecTargets;
+const diractProximityTargets = config.diractProximityTargets;
+const diractDigestTargets = config.diractDigestTargets;
 const barnowlOptions = {
-    enableMixing: config.enableMixing
+    enableMixing: config.enableMixing,
+    mixingDelayMilliseconds: config.mixingDelayMilliseconds
 };
 const raddecOptions = {
     includeTimestamp: config.includeTimestamp,
     includePackets: config.includePackets
 };
+const raddecFilterParameters = config.raddecFilterParameters;
+const useElasticsearch = (config.esNode !== null);
+const useDigester = (config.diractProximityTargets.length > 0) ||
+                    (config.diractDigestTargets.length > 0);
+let digesterOptions = {};
+if(config.diractProximityTargets.length > 0) {
+  digesterOptions.handleDirActProximity = handleDirActProximity;
+};
+if(config.diractDigestTargets.length > 0) {
+  digesterOptions.handleDirActDigest = handleDirActDigest;
+};
+const isDebugMode = config.isDebugMode;
 
 // Constants
 const REEL_BAUD_RATE = 230400;
 const DEFAULT_RADDEC_PATH = '/raddecs';
+const DEFAULT_UA_PATH = '/collect';
+const DEFAULT_UA_HOST = 'www.google-analytics.com';
+const DEFAULT_UA_PAGE = '/owl-in-one';
 const INVALID_DNS_UPDATE_MILLISECONDS = 2000;
 const STANDARD_DNS_UPDATE_MILLISECONDS = 60000;
 const REEL_DECODING_OPTIONS = {
@@ -35,6 +58,11 @@ const REEL_DECODING_OPTIONS = {
     minPacketLength: 8,
     maxPacketLength: 39
 };
+const ES_MAX_QUEUED_DOCS = 12;
+const ES_RADDEC_INDEX = 'raddec';
+const ES_DIRACT_PROXIMITY_INDEX = 'diract-proximity';
+const ES_DIRACT_DIGEST_INDEX = 'diract-digest';
+const ES_MAPPING_TYPE = '_doc';
 
 // Update DNS
 updateDNS();
@@ -48,6 +76,21 @@ client.on('listening', function() {
 // Create HTTP and HTTPS agents for webhooks
 let httpAgent = new http.Agent({ keepAlive: true });
 let httpsAgent = new https.Agent({ keepAlive: true });
+
+// Create Elasticsearch client
+let esClient;
+let esDocs;
+let isEsCallPending = false;
+if(useElasticsearch) {
+  esClient = new Client({ node: config.esNode });
+  esDocs = new Map();
+}
+
+// Create raddec filter
+let filter = new RaddecFilter(raddecFilterParameters);
+
+// Create diract digester
+let digester = new DirActDigester(digesterOptions);
 
 // Create barnowl instance with the configuration options
 let barnowl = new Barnowl(barnowlOptions);
@@ -67,9 +110,14 @@ if(config.listenToTcpdump) {
 // Forward the raddec to each target while pulsing the green LED
 barnowl.on('raddec', function(raddec) {
   tessel.led[2].on();
-  raddecTargets.forEach(function(target) {
-    forward(raddec, target);
-  });
+  if(filter.isPassing(raddec)) {
+    raddecTargets.forEach(function(target) {
+      forward(raddec, target);
+    });
+    if(useDigester) {
+      digester.handleRaddec(raddec);
+    }
+  }
   tessel.led[2].off();
 });
 
@@ -93,34 +141,167 @@ function forward(raddec, target) {
       break;
     case 'webhook':
       target.options = target.options || {};
-      let raddecString = JSON.stringify(raddec);
-      let options = {
-          hostname: target.host,
-          port: target.port,
-          path: target.options.path || DEFAULT_RADDEC_PATH,
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': raddecString.length
-          }
+      target.options.path = target.options.path || DEFAULT_RADDEC_PATH;
+      post(raddec, target);
+      break;
+    case 'elasticsearch':
+      let id = raddec.timestamp + '-' + raddec.transmitterId + '-' +
+               raddec.transmitterIdType;
+      let esRaddec = raddec.toFlattened(raddecOptions);
+      esRaddec.timestamp = new Date(esRaddec.timestamp).toISOString();
+      esHandleDoc(id, ES_RADDEC_INDEX, esRaddec);
+      break;
+    case 'ua':
+      target.host = target.host || DEFAULT_UA_HOST;
+      target.port = target.port || 443;
+      target.options = target.options || {};
+      target.options.path = target.options.path || DEFAULT_UA_PATH;
+      if(!(target.options.useHttps === false)) {
+        target.options.useHttps = true;
+      }
+      let data = {
+          v: '1',
+          tid: target.tid,
+          cid: raddec.transmitterId + '/' + raddec.transmitterIdType,
+          t: 'pageview',
+          dp: target.options.page || DEFAULT_UA_PAGE
       };
-      let req;
-      if(target.options.useHttps) {
-        options.agent = httpsAgent;
-        req = https.request(options, function(res) { });
-      }
-      else {
-        options.agent = httpAgent;
-        req = http.request(options, function(res) { });
-      }
-      req.on('error', function(err) {
-        tessel.led[0].on();
-        tessel.led[0].off();
-      });
-      req.write(raddecString);
-      req.end();
+      post(data, target, true);
       break;
   }
+}
+
+
+/**
+ * HTTP POST the given JSON data to the given target.
+ * @param {Object} data The data to POST.
+ * @param {Object} target The target host, port and protocol.
+ * @param {boolean} toQueryString Convert the data to query string?
+ */
+function post(data, target, toQueryString) {
+  target.options = target.options || {};
+  let dataString;
+  let headers;
+
+  if(toQueryString) {
+    dataString = querystring.encode(data);
+    headers = { "Content-Length": dataString.length };
+  }
+  else {
+    dataString = JSON.stringify(data);
+    headers = {
+        "Content-Type": "application/json",
+        "Content-Length": dataString.length
+    };
+  }
+
+  let options = {
+      hostname: target.host,
+      port: target.port,
+      path: target.options.path || '/',
+      method: 'POST',
+      headers: headers
+  };
+  let req;
+  if(target.options.useHttps) {
+    options.agent = httpsAgent;
+    req = https.request(options, function(res) { });
+  }
+  else {
+    options.agent = httpAgent;
+    req = http.request(options, function(res) { });
+  }
+  req.on('error', handleError);
+  req.write(dataString);
+  req.end();
+}
+
+
+/**
+ * Handle an Elasticsearch doc, initiating bulk update if no API call pending.
+ * @param {Object} params The parameters.
+ */
+function esHandleDoc(id, index, doc) {
+  while(esDocs.size >= ES_MAX_QUEUED_DOCS) {
+    let oldestKey = esDocs.keys().next().value;
+    esDocs.delete(oldestKey);
+  }
+
+  esDocs.set({ id: id, index: index }, doc);
+
+  if(!isEsCallPending) {
+    esBulk();
+  }
+}
+
+
+/**
+ * Perform Elasticsearch bulk update iteratively until there are no more docs.
+ */
+function esBulk() {
+  let body = [];
+  isEsCallPending = true;
+
+  esDocs.forEach(function(doc, key) {
+    body.push({ "create": { "_index": key.index, "_id": key.id } });
+    body.push(doc);
+  });
+  esDocs.clear();
+
+  esClient.bulk({ body: body }, function(err, result) {
+    let isMoreEsDocs = (esDocs.size > 0);
+    if(err) {
+      handleError(err);
+    }
+    if(isMoreEsDocs) {
+      esBulk();
+    }
+    else {
+      isEsCallPending = false;
+    }
+  });
+}
+
+
+/**
+ * Handle a DirAct proximity packet by forwarding to all targets.
+ * @param {Object} proximity The DirAct proximity data.
+ */
+function handleDirActProximity(proximity) {
+  diractProximityTargets.forEach(function(target) {
+    switch(target.protocol) {
+      case 'webhook':
+        post(proximity, target);
+        break;
+      case 'elasticsearch':
+        let id = proximity.timestamp + '-' + proximity.instanceId;
+        let esProximity = Object.assign({}, proximity);
+        esProximity.timestamp = new Date(proximity.timestamp).toISOString();
+        esHandleDoc(id, ES_DIRACT_PROXIMITY_INDEX, esProximity);
+        break;
+    }
+  });
+}
+
+
+/**
+ * Handle a DirAct digest packet by forwarding to all targets.
+ * @param {Object} digest The DirAct digest data.
+ */
+function handleDirActDigest(digest) {
+  diractDigestTargets.forEach(function(target) {
+    switch(target.protocol) {
+      case 'webhook':
+        post(digest, target);
+        break;
+      case 'elasticsearch':
+        let id = digest.timestamp + '-' + digest.instanceId;
+        let esDigest = Object.assign({}, digest);
+        esDigest.timestamp = new Date(digest.timestamp).toISOString();
+        esHandleDoc(id, ES_DIRACT_DIGEST_INDEX, esDigest);
+        break;
+    }
+  });
 }
 
 
@@ -143,8 +324,7 @@ function updateDNS() {
     if(target.protocol === 'udp') {
       dns.lookup(target.host, {}, function(err, address, family) {
         if(err) {
-          tessel.led[0].on();
-          tessel.led[0].off();
+          handleError(err);
           target.isValidAddress = false;
         }
         else {
@@ -157,4 +337,18 @@ function updateDNS() {
 
   // Schedule the next DNS update
   setTimeout(updateDNS, nextUpdateMilliseconds);
+}
+
+
+/**
+ * Handle the given error by blinking the red LED and, if debug mode is enabled,
+ * print the error to the console.
+ * @param {Object} err The error to handle.
+ */
+function handleError(err) {
+  tessel.led[0].on();
+  if(isDebugMode) {
+    console.log(err);
+  }
+  tessel.led[0].off();
 }
