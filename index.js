@@ -164,7 +164,7 @@ function forward(raddec, target) {
           tid: target.tid,
           cid: raddec.transmitterId + '/' + raddec.transmitterIdType,
           t: 'pageview',
-          dp: target.page || DEFAULT_UA_PAGE
+          dp: target.options.page || DEFAULT_UA_PAGE
       };
       post(data, target, true);
       break;
