@@ -28,6 +28,9 @@ const RADDEC_FILTER_PARAMETERS = {
 };
 const INCLUDE_TIMESTAMP = true;
 const INCLUDE_PACKETS = false;
+const ENABLE_WATCHDOG = true;
+const WATCHDOG_INTERVAL_MILLISECONDS = 5000;
+const WATCHDOG_LENIENCE_MILLISECONDS = 1000;
 const IS_DEBUG_MODE = false;
 
 // ---------------------------
@@ -46,4 +49,7 @@ module.exports.mixingDelayMilliseconds = MIXING_DELAY_MILLISECONDS;
 module.exports.raddecFilterParameters = RADDEC_FILTER_PARAMETERS;
 module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
 module.exports.includePackets = INCLUDE_PACKETS;
+module.exports.enableWatchdog = ENABLE_WATCHDOG;
+module.exports.watchdogIntervalMilliseconds = WATCHDOG_INTERVAL_MILLISECONDS;
+module.exports.watchdogLenienceMilliseconds = WATCHDOG_LENIENCE_MILLISECONDS;
 module.exports.isDebugMode = IS_DEBUG_MODE;

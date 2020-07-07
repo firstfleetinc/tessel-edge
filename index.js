@@ -43,6 +43,8 @@ if(config.diractProximityTargets.length > 0) {
 if(config.diractDigestTargets.length > 0) {
   digesterOptions.handleDirActDigest = handleDirActDigest;
 };
+const watchdogIntervalMilliseconds = config.watchdogIntervalMilliseconds;
+const watchdogLenienceMilliseconds = config.watchdogLenienceMilliseconds;
 const isDebugMode = config.isDebugMode;
 
 // Constants
@@ -63,6 +65,11 @@ const ES_RADDEC_INDEX = 'raddec';
 const ES_DIRACT_PROXIMITY_INDEX = 'diract-proximity';
 const ES_DIRACT_DIGEST_INDEX = 'diract-digest';
 const ES_MAPPING_TYPE = '_doc';
+
+// Enable watchdog
+if(config.enableWatchdog) {
+  iterateWatchdog(Date.now());
+}
 
 // Update DNS
 updateDNS();
@@ -337,6 +344,30 @@ function updateDNS() {
 
   // Schedule the next DNS update
   setTimeout(updateDNS, nextUpdateMilliseconds);
+}
+
+
+/**
+ * Self-iterating function which checks if it executes at the expected time
+ * plus a given amount of lenience.  If execution occurs beyond this time
+ * window, the process commits suicide with the expectation that it will be
+ * restarted by the OS.  If all is well, it schedules the next execution.
+ * @param {Number} previousTimestamp The timestamp at which this last executed.
+ */
+function iterateWatchdog(previousTimestamp) {
+  let currentTimestamp = Date.now();
+  let expectedTimestamp = previousTimestamp + watchdogIntervalMilliseconds;
+
+  if((currentTimestamp - expectedTimestamp) > watchdogLenienceMilliseconds) {
+    if(isDebugMode) {
+      let lateness = currentTimestamp - (expectedTimestamp +
+                                         watchdogLenienceMilliseconds);
+      console.log('Watchdog ran ' + lateness + 'ms too late.  Exiting process');
+    }
+    process.exit(1);
+  }
+
+  setTimeout(iterateWatchdog, watchdogIntervalMilliseconds, currentTimestamp);
 }
 
 
