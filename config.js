@@ -32,7 +32,12 @@ const ENABLE_WATCHDOG = true;
 const WATCHDOG_INTERVAL_MILLISECONDS = 5000;
 const WATCHDOG_LENIENCE_MILLISECONDS = 1000;
 const IS_DEBUG_MODE = false;
-
+const USE_AMQP = null;
+const AMQP_HOST = '';
+const AMQP_PORT = '';
+const AMQP_VHOST = '';
+const AMQP_USER = '';
+const AMQP_PASSWORD = '';
 // ---------------------------
 // End configurable parameters
 
@@ -53,3 +58,9 @@ module.exports.enableWatchdog = ENABLE_WATCHDOG;
 module.exports.watchdogIntervalMilliseconds = WATCHDOG_INTERVAL_MILLISECONDS;
 module.exports.watchdogLenienceMilliseconds = WATCHDOG_LENIENCE_MILLISECONDS;
 module.exports.isDebugMode = IS_DEBUG_MODE;
+module.exports.useAmqp = USE_AMQP;
+module.exports.amqpHost = AMQP_HOST;
+module.exports.amqpPort = AMQP_PORT;
+module.exports.amqpVhost = AMQP_VHOST;
+module.exports.amqpUser = AMQP_USER;
+module.exports.amqpPassword = AMQP_PASSWORD;

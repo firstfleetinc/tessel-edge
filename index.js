@@ -18,6 +18,7 @@ const DirActDigester = require('diract-digester');
 const Raddec = require('raddec');
 const RaddecFilter = require('raddec-filter');
 const { Client } = require('@elastic/elasticsearch');
+const amqp = require('amqp-connection-manager');
 const config = require('./config');
 
 // Load the configuration parameters
@@ -34,6 +35,7 @@ const raddecOptions = {
 };
 const raddecFilterParameters = config.raddecFilterParameters;
 const useElasticsearch = (config.esNode !== null);
+const useAmqp = (config.useAmqp !== null);
 const useDigester = (config.diractProximityTargets.length > 0) ||
                     (config.diractDigestTargets.length > 0);
 let digesterOptions = {};
@@ -91,6 +93,13 @@ let isEsCallPending = false;
 if(useElasticsearch) {
   esClient = new Client({ node: config.esNode });
   esDocs = new Map();
+}
+
+let amqpConnection;
+// Create the amqp client
+if(useAmqp) {
+  const connectionString = `amqp://${config.amqpUser}:${config.amqpPassword}@${config.amqpHost}:${config.amqpPort}${encodeURI(config.amqpVhost)}?heartbeat=15`;
+  amqpConnection = amqp.connect(connectionString);
 }
 
 // Create raddec filter
@@ -175,7 +184,25 @@ function forward(raddec, target) {
       };
       post(data, target, true);
       break;
+    case 'amqp':
+        amqpSend(raddec, amqpConnection, target.options.queue);
+      break;
   }
+}
+
+function amqpSend(data, connection, queue) {
+  const channelWrapper = connection.createChannel({
+    json: true,
+    setup: (channel) => {
+      return channel.assertQueue(queue)
+    }
+  });
+
+  channelWrapper.sendToQueue(queue, data)
+      .then(() => {
+        channelWrapper.close();
+      })
+      .catch(handleError)
 }
 
 
