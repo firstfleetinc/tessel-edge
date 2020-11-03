@@ -22,7 +22,6 @@
   ],
   "dependencies": {
     "@elastic/elasticsearch": "^7.0.0",
-    "amqp-connection-manager": "^3.2.1",
     "barnowl": "^1.1.0",
     "barnowl-reel": ">=0.1.10",
     "barnowl-tcpdump": ">=0.1.5",

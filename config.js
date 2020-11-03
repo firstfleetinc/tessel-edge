@@ -11,25 +11,32 @@ const Raddec = require('raddec');
 // -----------------------------
 
 const RADDEC_TARGETS = [
-    { protocol: "udp", host: "192.168.1.255", port: "50001" }
+    {
+        protocol: "webhook",
+        host: "dev-node1.firstfleetinc.com",
+        port: "80",
+        options: {useHttps: false, path: '/site/ble/raddecs'}
+    }
 ];
-const DIRACT_PROXIMITY_TARGETS = [
-];
-const DIRACT_DIGEST_TARGETS = [
-];
+//const RADDEC_TARGETS = [];
+const DIRACT_PROXIMITY_TARGETS = [];
+const DIRACT_DIGEST_TARGETS = [];
 const ES_NODE = null;            // Example: 'http://192.168.1.10:9200'
 const IS_UDP_BROADCAST = true;
 const LISTEN_TO_REEL = true;
 const LISTEN_TO_TCPDUMP = false;
 const ENABLE_MIXING = true;
-const MIXING_DELAY_MILLISECONDS = 1000;
+const MIXING_DELAY_MILLISECONDS = 5000;
 const RADDEC_FILTER_PARAMETERS = {
     minRSSI: -90
+};
+const DEVICE_FILTER_PARAMETERS = {
+    uuidFilter: ['798edd32774742e185de4b257453ac8c']
 };
 const INCLUDE_TIMESTAMP = true;
 const INCLUDE_PACKETS = true;
 const ENABLE_WATCHDOG = true;
-const WATCHDOG_INTERVAL_MILLISECONDS = 5000;
+const WATCHDOG_INTERVAL_MILLISECONDS = 5000
 const WATCHDOG_LENIENCE_MILLISECONDS = 1000;
 const IS_DEBUG_MODE = false;
 const USE_AMQP = null;
@@ -52,6 +59,7 @@ module.exports.listenToTcpdump = LISTEN_TO_TCPDUMP;
 module.exports.enableMixing = ENABLE_MIXING;
 module.exports.mixingDelayMilliseconds = MIXING_DELAY_MILLISECONDS;
 module.exports.raddecFilterParameters = RADDEC_FILTER_PARAMETERS;
+module.exports.deviceFilterParameters = DEVICE_FILTER_PARAMETERS;
 module.exports.includeTimestamp = INCLUDE_TIMESTAMP;
 module.exports.includePackets = INCLUDE_PACKETS;
 module.exports.enableWatchdog = ENABLE_WATCHDOG;

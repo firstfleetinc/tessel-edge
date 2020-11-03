@@ -64,3 +64,4 @@ typings/
 .idea/tessel-edge.iml
 .idea/vcs.xml
 .idea/workspace.xml
+.idea/jsLibraryMappings.xml
